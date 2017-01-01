@@ -1,0 +1,4 @@
+#!/bin/bash
+./elevator.py&
+sleep 1
+./elevator_remote.py
