@@ -6,9 +6,10 @@ I have been interested in the principals of controlling elevators for a long tim
 
 At this moment (January 1, 2017) It is working reliably.
 
-![The cabin](./gfx/20161231_07_elevator_cabin.jpg "construction of the cabin")
+<img src="./gfx/20161231_07_elevator_cabin.jpg" alt="cabin" style="width: 200px;"/>
 
-![Raspberry Pi ](./gfx/20161231_Motor_HAT.jpg "the control section")
+<img src="./gfx/20161231_Motor_HAT.jpg" alt="cabin" style="width: 200px;"/>
+
 
 ## Construction
 I constructed the code in two python programs. the original program I started out with is called **`elevator.py`**. It contains all of the main control code and the command interpreter. It used to ask for commands of the keyboard, but when it was doing that tha processing did not proceed properly.
