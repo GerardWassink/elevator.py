@@ -6,9 +6,9 @@ I have been interested in the principals of controlling elevators for a long tim
 
 At this moment (January 1, 2017) It is working reliably.
 
-<img src="./gfx/20161231_07_elevator_cabin.jpg" alt="cabin" style="width: 200px;"/>
+<img src="./gfx/20161231_07_elevator_cabin.jpg" alt="cabin" width="200"/>
 
-<img src="./gfx/20161231_Motor_HAT.jpg" alt="cabin" style="width: 200px;"/>
+<img src="./gfx/20161231_Motor_HAT.jpg" alt="RPi control" width="200"/>
 
 
 ## Construction
