@@ -37,7 +37,6 @@
 										# for the Motor Hat board
 from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
 from collections import deque			# a neat queue class
-from subprocess import call				# be able to do system stuff
 import atexit							# to register stuff to be executed
 										#	at exit
 import logging							# for logging
@@ -403,8 +402,6 @@ atexit.register(cleanup)
 # ------------------------------------------------------------------------
 # Start program
 # ------------------------------------------------------------------------
-
-call("clear")								# clear screen
 
 print " "
 print "-----=====##### Elevator program #####=====-----"
