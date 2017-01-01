@@ -403,10 +403,6 @@ atexit.register(cleanup)
 # Start program
 # ------------------------------------------------------------------------
 
-print " "
-print "-----=====##### Elevator program #####=====-----"
-print " "
-
 elv = elevator()							# create elevator object
 
 # ------------------------------------------------------------------------
