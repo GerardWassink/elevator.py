@@ -15,26 +15,20 @@ And because I didn't want to have two terminal screens open, as a third part I c
 
 ## Libraries
 The libraries used in this project are:
-
-### ADAFRUIT_MotorHAT, used for
-* motor control
-
-### collenctions - deque, used for
-* the creation of a queue mechanism
-
-### atexit, used for
-* registering a routine that is executed at program end
-
-### logging, used for
-* giving messages thoughout the program
-
-### pigpio, used for
-* controlling the input switches
-	* callback interrupt routines
-* controlling the output LED's
-
-### time, used for
-* knowing the time, timing interrupts
+* ADAFRUIT_MotorHAT, used for
+	* motor control
+* collections - deque, used for
+	* the creation of a queue mechanism
+* atexit, used for
+	* registering a routine that is executed at program end
+* logging, used for
+	* giving messages thoughout the program
+* pigpio, used for
+	* controlling the input switches
+		* callback interrupt routines
+	* controlling the output LED's
+* time, used for
+	* knowing the time, timing interrupts
 
 
 ## Commands
