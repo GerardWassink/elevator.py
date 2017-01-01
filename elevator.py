@@ -386,6 +386,10 @@ def cleanup():
 	elv.deregister_handlers()				# cancel handlers
 	turnAllOff()							# turn off all engines
 	elv.direction_leds("off")				# switch of other LED's
+	pi.write(elv.first, 0)
+	pi.write(elv.second, 0)
+	pi.write(elv.third, 0)
+	pi.write(elv.fourth, 0)
 	pi.stop()								# disconnect from pi
 
 # ------------------------------------------------------------------------
@@ -420,6 +424,13 @@ if elv.position == 0:						# did we find the cabin?
 	logging.info("Cabin position not defined, moving to ground floor")
 	elv.position = 4						# set from to highest floor		
 	elv.set_destination(1)					# move down to 1st floor
+elif elv.position == 1:	pi.write(elv.first, 1)	# set floor LED
+elif elv.position == 2:	pi.write(elv.second, 1)	# set floor LED
+elif elv.position == 3:	pi.write(elv.third, 1)	# set floor LED
+elif elv.position == 4:	pi.write(elv.fourth, 1)	# set floor LED
+else:
+	logging.info("Cabin position not within proper range")
+
 
 # ------------------------------------------------------------------------
 # Prepare to READ new requests from the elevator remote file
