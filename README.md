@@ -22,6 +22,8 @@ And because I didn't want to have two terminal screens open, as a third part I c
 The libraries used in this project are:
 * ADAFRUIT_MotorHAT, used for
 	* motor control
+* paho.mqtt - message broker, used for
+	* communicating between remote control and elevatir
 * collections - deque, used for
 	* the creation of a queue mechanism
 * atexit, used for

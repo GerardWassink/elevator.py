@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 # ------------------------------------------------------------------------
-# Program		:	elevator_remote.py
+# Program		:	elevator_monitor.py
 # Author		:	Gerard Wassink
-# Date			:	december 2016
+# Date			:	january 2017
 #
-# Function		:	send control command to an elevator with four floors
+# Function		:	monitor msg queue broker for elevator/*
 #
 # ------------------------------------------------------------------------
 # 						GNU LICENSE CONDITIONS
@@ -31,51 +31,40 @@
 import paho.mqtt.client as mqtt			# msg queueing
 import time								# time handling
 
-ClientID = "ELV_REM"
+print "ELV_MON:  "
+print "ELV_MON: -----===== Elevator monitor program =====-----"
+print "ELV_MON:  "
 
-# ------------------------------------------------------------------------
+time.sleep(0.5)
+
+
 # The callback for when the client receives a CONNACK response from the server.
-# ------------------------------------------------------------------------
 def on_connect(client, userdata, flags, rc):
-	print ClientID+": Connected with result code "+str(rc)
-		# Subscribing in on_connect() means that if we lose the connection and
+	print "ELV_MON: Connected with result code "+str(rc)
+	
+	# Subscribing in on_connect() means that if we lose the connection and
 	# reconnect then subscriptions will be renewed.
-	client.subscribe("elevator/responses")
+	print "ELV_MON: Asking for subscription"
+	client.subscribe("elevator/#", qos=2)
 
-# ------------------------------------------------------------------------
-# The callback for when a PUBLISH message is received from the server.
-# ------------------------------------------------------------------------
-def on_publish(client, userdata, mid):
-	print ClientID+": mid: "+str(mid)
-
-# ------------------------------------------------------------------------
 # The callback for when a message is received from the server.
-# ------------------------------------------------------------------------
 def on_message(client, userdata, msg):
-	print ClientID+": response: "+msg.payload
+	print "ELV_MON: "+": "+msg.payload
 
-# ------------------------------------------------------------------------
-# Initialise message queue object to send command to the mqtt broker
-# ------------------------------------------------------------------------
-client = mqtt.Client(client_id=ClientID, clean_session=False)
+client = mqtt.Client(client_id="ELV_MON", clean_session=False)
 client.on_connect = on_connect
-client.on_publish = on_publish
+client.on_message = on_message
 
 client.connect("localhost", 1883, 60)
 
 # Continue the network loop, exit when an error occurs
 client.loop_start()
 
-
-print ClientID+":"
-print ClientID+": -----===== Elevator remote control program =====-----"
-print ClientID+":"
-
 while True:
-	reply = raw_input("Remote input > ")
+	reply = raw_input("Monitor command (Q to Quit): ")
+	print "\n"
 	reply = reply.upper()
-	client.publish("elevator/commands", payload=reply, qos=2, retain=False)
-	if reply == "QUIT" or reply == "Q":
+	if reply == "Q":
 		time.sleep(0.2)
 		client.loop_stop()
 		client.disconnect()
