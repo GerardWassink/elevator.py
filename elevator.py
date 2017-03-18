@@ -10,8 +10,12 @@
 #					commands to control the elevator system
 #						(see the explain() routine)
 #
-# History		:	20170205 -Added message queueing instead of serial
+# History		:
+#					20170205 -Added message queueing instead of serial
 #						file to communicate between elevator and remote
+#
+#					20170318 -Altered code to make use of windowed screen
+#						in remote control program for feedback
 #
 # ------------------------------------------------------------------------
 # 						GNU LICENSE CONDITIONS
@@ -43,7 +47,6 @@ from collections import deque			# a neat queue class
 import paho.mqtt.client as mqtt			# message queueing library
 import atexit							# to register stuff to be executed
 										#	at exit
-import logging							# for logging
 import pigpio							# Raspberry Pi GPIO lib
 import time								# be able to tell the time
 
@@ -65,25 +68,6 @@ release		= Adafruit_MotorHAT.RELEASE
 
 time_stamp = time.time()				# now is the time
 last_time_action = time.time()			# last time there was action
-
-# ------------------------------------------------------------------------
-# 										Set logging level
-# ------------------------------------------------------------------------
-#LOGLEVEL = logging.NOTSET				# 0
-#LOGLEVEL = logging.DEBUG				# 10
-#LOGLEVEL = logging.INFO				# 20
-#LOGLEVEL = logging.WARNING				# 30
-#LOGLEVEL = logging.ERROR				# 40
-#LOGLEVEL = logging.CRITICAL			# 50
-
-LOGLEVEL = logging.DEBUG
-
-# ------------------------------------------------------------------------
-# 										Set logging format
-# ------------------------------------------------------------------------
-logging.basicConfig(level=LOGLEVEL, \
-			format='%(asctime)s: %(levelname)s: %(message)s', \
-			datefmt='%Y-%m-%d,%I:%M:%S')
 
 
 # ------------------------------------------------------------------------
@@ -115,9 +99,9 @@ class elevator():
 		self.floor_3	=	24			#   cabin at
 		self.floor_4	=	25			#    each floor
 		
-		# ------------------------------------------------------------------------
+		# ----------------------------------------------------------------
 		# 								Prepare output pins for LED's
-		# ------------------------------------------------------------------------
+		# ----------------------------------------------------------------
 		pi.set_mode(self.first, pigpio.OUTPUT)
 		pi.set_mode(self.second, pigpio.OUTPUT)
 		pi.set_mode(self.third, pigpio.OUTPUT)
@@ -156,6 +140,12 @@ class elevator():
 		self.reqque = deque()			# Request queue 
 		
 		
+		# ----------------------------------------------------------------
+		# 								Control related stuff
+		# ----------------------------------------------------------------
+		self.keep_going = True
+
+
 		# ----------------------------------------------------------------
 		# 								Prepare event handlers
 		# ----------------------------------------------------------------
@@ -196,7 +186,7 @@ class elevator():
 		if (time_now - time_stamp) >= 0.3:	#	previous; 0.3 seconds past?
 											# then go, else ignore
 			if gpio == self.floor_1:
-				logging.debug("ELV_RPI: FIRST floor")
+				output("FIRST floor")
 				if self.destination == 1:
 					self.stop()
 				self.set_position(1)
@@ -206,7 +196,7 @@ class elevator():
 				pi.write(self.fourth, 0)
 			
 			elif gpio == self.floor_2:
-				logging.debug("ELV_RPI: SECOND floor")
+				output("SECOND floor")
 				if self.destination == 2:
 					self.stop()
 				self.set_position(2)
@@ -216,7 +206,7 @@ class elevator():
 				pi.write(self.fourth, 0)
 			
 			elif gpio == self.floor_3:
-				logging.debug("ELV_RPI: THIRD floor")
+				output("THIRD floor")
 				if self.destination == 3:
 					self.stop()
 				self.set_position(3)
@@ -226,7 +216,7 @@ class elevator():
 				pi.write(self.fourth, 0)
 			
 			elif gpio == self.floor_4:
-				logging.debug("ELV_RPI: FOURTH floor")
+				output("FOURTH floor")
 				if self.destination == 4:
 					self.stop()
 				self.set_position(4)
@@ -236,7 +226,7 @@ class elevator():
 				pi.write(self.fourth, 1)
 			
 			else:
-				logging.error("ELV_RPI: invalid input")
+				output("invalid input")
 				
 		time_stamp = time_now			# save time to global
 										#	for next compare
@@ -304,7 +294,7 @@ class elevator():
 			pi.write(self.red, 0)
 			pi.write(self.yellow, 0)
 		else:
-			logging.error("ELV_RPI: invalid value received")
+			output("invalid value received")
 	
 	
 # ------------------------------------------------------------------------
@@ -347,46 +337,48 @@ def turnAllOff():
 # 									Explain commands
 # ------------------------------------------------------------------------
 def explain():
-	print "Elevator program commands"
-	print " "
-	print "help | h : this help information"
-	print " "
-	print "up | u   : make cabin go up"
-	print "down | d : make cabin go down"
-	print "stop | s : make cabin stop"
-	print " "
-	print "1|2|3|4  : set destination to some floor and go there"
-	print " "
-	print "X-Y      : I'm on floor X and wanna go to floor Y"
-	print " "
-	print "quit | q : end the program"
-	print " "
+	output("Elevator program commands")
+	output(" ")
+	output("help | h : this help information")
+	output(" ")
+	output("up | u   : make cabin go up")
+	output("down | d : make cabin go down")
+	output("stop | s : make cabin stop")
+	output(" ")
+	output("1|2|3|4  : set destination to some floor and go there")
+	output(" ")
+	output("X-Y      : I'm on floor X and wanna go to floor Y")
+	output(" ")
+	output("POP | P  : remove last entry from command queue")
+	output(" ")
+	output("quit | q : end the program")
+	output(" ")
 
 
 # ------------------------------------------------------------------------
 # 									Show program status
 # ------------------------------------------------------------------------
 def show_status():
-	print " "
-	print "	--------------------=== STATUS ===--------------------"
-	print "	position = 	", elv.position
-	print "	direction =	", elv.direction
-	print "	destination =	", elv.destination
-	print " "
-	print "	--------------------=== QUEUE  ===--------------------"
-	print " "
+	output(" ")
+	output("-----=== STATUS ===-----")
+	output("position    = " + str(elv.position))
+	output("direction   = " + elv.direction)
+	output("destination = " + str(elv.destination))
+	output(" ")
+	output("-----=== QUEUE  ===-----")
+	output(" ")
 	if elv.que_empty():						# que empty?
-		print "	QUEUE IS EMPTY"
+		output("QUEUE IS EMPTY")
 	else:
 		for r in elv.reqque:
-			print "	", r
-	print "	--------------------=== END STATUS ===----------------"
+			output(str(r))
+	output("-----=== END STATUS ===-----")
 
 # ------------------------------------------------------------------------
 # End program
 # ------------------------------------------------------------------------
 def cleanup():
-	logging.debug("ELV_RPI: Clearing events")
+	output("Clearing events")
 	elv.deregister_handlers()				# cancel handlers
 	turnAllOff()							# turn off all engines
 	elv.direction_leds("off")				# switch of other LED's
@@ -399,14 +391,16 @@ def cleanup():
 	pi.write(elv.third, 0)
 	pi.write(elv.fourth, 0)
 	pi.stop()								# disconnect from pi
+	
+	output(" ")
+	output("---===### Program properly ended ###===---")
+	output(" ")
+
 
 
 # ------------------------------------------------------------------------
-# Start of program
+# 											MAIN CODE STARTS HERE
 # ------------------------------------------------------------------------
-print " "
-print "-----=====##### Start elevator program #####=====-----"
-print " "
 
 
 # ------------------------------------------------------------------------
@@ -414,50 +408,29 @@ print " "
 # ------------------------------------------------------------------------
 atexit.register(cleanup)
 
-# ------------------------------------------------------------------------
-# 											MAIN CODE STARTS HERE
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Start program
-# ------------------------------------------------------------------------
-
 elv = elevator()							# create elevator object
 
-# ------------------------------------------------------------------------
-# Show commands and initial status
-# ------------------------------------------------------------------------
-show_status()								# show initial status
 
 # ------------------------------------------------------------------------
-# Some initialization
+# Output function replacing all "logging.x' and "print" statements
+#	outputting it to the message broker for the remote app instead
 # ------------------------------------------------------------------------
-from_floor = -1								# at this point
-to_floor = -1								# 	no request pending
-
-if elv.position == 0:						# did we find the cabin?
-	logging.info("ELV_RPI: Cabin position not defined, moving to ground floor")
-	elv.position = 4						# set from to highest floor		
-	elv.set_destination(1)					# move down to 1st floor
-elif elv.position == 1:	pi.write(elv.first, 1)	# set floor LED
-elif elv.position == 2:	pi.write(elv.second, 1)	# set floor LED
-elif elv.position == 3:	pi.write(elv.third, 1)	# set floor LED
-elif elv.position == 4:	pi.write(elv.fourth, 1)	# set floor LED
-else:
-	logging.info("ELV_RPI: Cabin position not within proper range")
+def output(text):
+#	print text
+	client.publish("elevator/responses", \
+		payload="ELV_CTL: " + text, \
+		qos=2, retain=False)
 
 
 # ------------------------------------------------------------------------
 # 										Message queueing routines
 # ------------------------------------------------------------------------
 
-ELV_continue = True
-
 # ------------------------------------------------------------------------
 # The callback for when the client receives a CONNACK response from the server.
 # ------------------------------------------------------------------------
 def on_connect(client, userdata, flags, rc):
-	print "ELV_RPI: Connected to msg queue with result code "+str(rc)
+	output("Connected to msg queue with result code "+str(rc))
 	
 	# Subscribing in on_connect() means that if we lose the connection and
 	# reconnect then subscriptions will be renewed.
@@ -473,57 +446,63 @@ def on_publish(client, userdata, mid):
 # The callback for when a message is received from the server.
 # ------------------------------------------------------------------------
 def on_message(client, userdata, msg):
-	global ELV_continue
 	global elv
 
 	reply = msg.payload						# command received
 	reply = reply.upper()					# make upper case
 	
-	if reply <> "":							# if line entered
-		if reply.find("\n") > -1:
+	if reply <> "":							# if line not empty
+		if reply.find("\n") > -1:			#  if newline found
 			reply = reply[0:reply.find("\n")]	# strip newline when present
 
-	if reply == "":	pass					# skip empty lines
+	if reply == "":							# skip empty lines
+		pass
 	
 	elif reply == "QUIT" or reply == "Q":	# End of program
-		print "ELV_RPI: End of program"
-		ELV_continue = False
+		output("End of program")
+		elv.keep_going = False
 	
-	elif reply == "UP" or reply == "U":		elv.go_up()
+	elif reply == "UP" or reply == "U":		# Just move up
+		elv.go_up()
 
-	elif reply == "DOWN" or reply == "D":	elv.go_down()
+	elif reply == "DOWN" or reply == "D":	# Just move down
+		elv.go_down()
 
-	elif reply == "STOP" or reply == "S":	elv.stop()
+	elif reply == "STOP" or reply == "S":	# Just stop
+		elv.stop()
 
 	elif reply == "POP" or reply == "P":	# pop one que entry
 		temp = elv.next_request()
-		print "one entry: |"+str(temp[0])+"-"+str(temp[1])+"| popped from queue"
+		output("one entry: |"+str(temp[0])+"-"+str(temp[1])+"| popped from queue")
 		show_status()
 	
-	elif reply == "?":						show_status()
+	elif reply == "?":						# Status inquiry
+		show_status()
 	
 	elif reply.isdigit():					# do we have a number?
 		f = int(reply)						# convert to int
 		if f > 0 and f <=4:					# is it a valid floor?
 			elv.set_destination(f)			# make cab go there
 		else:
-			logging.warning("ELV_RPI: Invalid command, type help")
+			output("Invalid command, type help")
 	
 	elif reply.find("-") > -1:				# if we have a request in the
 		elv.push_request(reply)				#	form "X-Y" then queue it
 	
-	elif reply == "HELP" or reply == "H":	explain()
+	elif reply == "HELP" or reply == "H":	
+		explain()
 	
 	else:
-		logging.warning("ELV_RPI: Invalid command, type help")
+		output("Invalid command, type help")
 
 
 # ------------------------------------------------------------------------
 # Initialise message Queue client to read new requests
 # ------------------------------------------------------------------------
-client = mqtt.Client(client_id="ELV_RPI", clean_session=False)
+client = mqtt.Client(client_id="ELV_CTL", clean_session=False)
 client.on_connect = on_connect
 client.on_message = on_message
+client.on_publish = on_publish
 
 client.connect("localhost", 1883, 60)
 
@@ -533,9 +512,28 @@ client.loop_start()
 
 
 # ------------------------------------------------------------------------
+# Some initialization
+# ------------------------------------------------------------------------
+from_floor = -1								# at this point
+to_floor = -1								# 	no request pending
+
+if elv.position == 0:						# did we find the cabin?
+	output("Cabin position not defined, moving to ground floor")
+	elv.position = 4						# set from to highest floor		
+	elv.set_destination(1)					# move down to 1st floor
+elif elv.position == 1:	pi.write(elv.first, 1)	# set floor LED
+elif elv.position == 2:	pi.write(elv.second, 1)	# set floor LED
+elif elv.position == 3:	pi.write(elv.third, 1)	# set floor LED
+elif elv.position == 4:	pi.write(elv.fourth, 1)	# set floor LED
+else:
+	output("Cabin position not within proper range")
+
+
+
+# ------------------------------------------------------------------------
 # 											Start main loop
 # ------------------------------------------------------------------------
-while ELV_continue:
+while elv.keep_going:
 
 	# --------------------------------------------------------------------
 	# Handle requests from queue, if any
@@ -552,8 +550,8 @@ while ELV_continue:
 													#	go to 1st floor
 				if (time_now - last_time_action) > 30:
 					if elv.position <> 1:
-						logging.info("ELV_RPI: No requests for 30 seconds,")
-						logging.info("ELV_RPI: 	returning to first floor")
+						output("No requests for 30 seconds,")
+						output("   returning to first floor")
 						elv.push_request(str(elv.position)+"-"+str(1))
 					
 					last_time_action = time_now
@@ -563,11 +561,10 @@ while ELV_continue:
 				from_floor = current_request[0]		# Extract from
 				to_floor = current_request[1]		#   and to floor
 				
-				logging.info("ELV_RPI: Handling request from (" + \
+				output("Handling request from (" + \
 					str(from_floor) + ") to (" + str(to_floor) + ")")
 				
-				logging.info("ELV_RPI: Setting for from_floor (" + \
-				str(from_floor)+")")
+				output("Set destination to (" + str(from_floor)+")")
 				elv.set_destination(from_floor)		# go to from floor
 				
 		else:										# Request is running
@@ -575,16 +572,16 @@ while ELV_continue:
 			if from_floor > -1:						# from floor not done?
 				if elv.position == from_floor:		# r we there already?
 					from_floor = -1					#  indicate done
-					logging.info("ELV_RPI: Reached from_floor ("+str(elv.position)+")")
+					output("At from_floor (" + str(elv.position)+")")
 					time.sleep(2)
 					
-					logging.info("ELV_RPI: Setting for to_floor ("+str(to_floor)+")")
+					output("Set destination to (" + str(to_floor)+")")
 					elv.set_destination(to_floor)	# go to next floor
 					
 			if to_floor > -1:						# to floor not done?
 				if elv.position == to_floor:		# there already?
 					to_floor = -1					#  indicate done
-					logging.info("ELV_RPI: Reached to_floor ("+str(elv.position)+")")
+					output("At floor (" + str(elv.position)+")")
 					time.sleep(2)
 	
 	time.sleep(1)						# sample request queue per second
@@ -594,8 +591,8 @@ while ELV_continue:
 # End program
 # ------------------------------------------------------------------------
 
-print " "
-print "-----=====##### End elevator program #####=====-----"
-print " "
+output(" ")
+output("---===### End program ###===---")
+output(" ")
 
 exit()

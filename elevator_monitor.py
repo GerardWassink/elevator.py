@@ -5,7 +5,7 @@
 # Author		:	Gerard Wassink
 # Date			:	january 2017
 #
-# Function		:	monitor msg queue broker for elevator/*
+# Function		:	monitor msg queue broker for elevator/#
 #
 # ------------------------------------------------------------------------
 # 						GNU LICENSE CONDITIONS
@@ -31,43 +31,66 @@
 import paho.mqtt.client as mqtt			# msg queueing
 import time								# time handling
 
+keep_going = True
+subscr_topic = "elevator/#"
+
 print "ELV_MON:  "
 print "ELV_MON: -----===== Elevator monitor program =====-----"
 print "ELV_MON:  "
 
-time.sleep(0.5)
-
-
+# ------------------------------------------------------------------------
 # The callback for when the client receives a CONNACK response from the server.
+# ------------------------------------------------------------------------
 def on_connect(client, userdata, flags, rc):
 	print "ELV_MON: Connected with result code "+str(rc)
 	
-	# Subscribing in on_connect() means that if we lose the connection and
-	# reconnect then subscriptions will be renewed.
-	print "ELV_MON: Asking for subscription"
-	client.subscribe("elevator/#", qos=2)
+										# Subscribing in on_connect() means that
+										# if we lose the connection and
+										# reconnect then subscriptions will be
+										# renewed.
+	print "ELV_MON: Subscribing"
+	client.subscribe(subscr_topic, qos=2)
 
+# ------------------------------------------------------------------------
 # The callback for when a message is received from the server.
+# ------------------------------------------------------------------------
 def on_message(client, userdata, msg):
+	global keep_going
 	print "ELV_MON: "+": "+msg.payload
+	if msg.payload.upper() == "QUIT" or msg.payload.upper() == "Q":
+		keep_going = False
 
+# ------------------------------------------------------------------------
+# Initialise broker client object
+# ------------------------------------------------------------------------
+
+										# create the client object
 client = mqtt.Client(client_id="ELV_MON", clean_session=False)
+
+										# register callback routines
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.connect("localhost", 1883, 60)
+client.connect("localhost", 1883, 60)	# connect client to broker
 
-# Continue the network loop, exit when an error occurs
-client.loop_start()
+client.loop_start()						# Continue the network loop, exit when
+										# an error occurs
 
-while True:
-	reply = raw_input("Monitor command (Q to Quit): ")
-	print "\n"
-	reply = reply.upper()
-	if reply == "Q":
-		time.sleep(0.2)
-		client.loop_stop()
-		client.disconnect()
-		break
+# ------------------------------------------------------------------------
+# Main loop (to catch callbacks)
+# ------------------------------------------------------------------------
 
-exit()
+while keep_going:						# loop until Q command
+	time.sleep(0.2)
+
+
+# ------------------------------------------------------------------------
+# End of program
+# ------------------------------------------------------------------------
+time.sleep(0.2)							# allow for some time
+print "ELV_MON: Unsubscribing"
+client.unsubscribe(subscr_topic)		# unsubscribe the topic
+client.loop_stop()						# stop the client loop
+client.disconnect()						# disconnect from broker
+print "ELV_MON: Disconnected"
+exit()									# leave

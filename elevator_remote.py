@@ -29,16 +29,21 @@
 # ------------------------------------------------------------------------
 
 import paho.mqtt.client as mqtt			# msg queueing
+from gawterm import term				# screen class
 import time								# time handling
+import commands
 
-ClientID = "ELV_REM"
+t = term()
+
+ClientID = "ELV_REM_" + commands.getoutput("whoami")
+t.msgPrint("ClientID = " + ClientID)
 
 # ------------------------------------------------------------------------
 # The callback for when the client receives a CONNACK response from the server.
 # ------------------------------------------------------------------------
 def on_connect(client, userdata, flags, rc):
-	print ClientID+": Connected with result code "+str(rc)
-		# Subscribing in on_connect() means that if we lose the connection and
+	t.msgPrint(ClientID+": Connected with result code "+str(rc))
+	# Subscribing in on_connect() means that if we lose the connection and
 	# reconnect then subscriptions will be renewed.
 	client.subscribe("elevator/responses")
 
@@ -46,19 +51,21 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 # ------------------------------------------------------------------------
 def on_publish(client, userdata, mid):
-	print ClientID+": mid: "+str(mid)
-
+#	t.msgPrint(ClientID+": mid: "+str(mid))
+	pass
+	
 # ------------------------------------------------------------------------
 # The callback for when a message is received from the server.
 # ------------------------------------------------------------------------
 def on_message(client, userdata, msg):
-	print ClientID+": response: "+msg.payload
+	t.msgPrint(msg.payload)
 
 # ------------------------------------------------------------------------
 # Initialise message queue object to send command to the mqtt broker
 # ------------------------------------------------------------------------
 client = mqtt.Client(client_id=ClientID, clean_session=False)
 client.on_connect = on_connect
+client.on_message = on_message
 client.on_publish = on_publish
 
 client.connect("localhost", 1883, 60)
@@ -67,18 +74,23 @@ client.connect("localhost", 1883, 60)
 client.loop_start()
 
 
-print ClientID+":"
-print ClientID+": -----===== Elevator remote control program =====-----"
-print ClientID+":"
+t.msgPrint(ClientID+":")
+t.msgPrint(ClientID+": ---=== Elevator remote control program ===---")
+t.msgPrint(ClientID+":")
 
 while True:
-	reply = raw_input("Remote input > ")
+	reply = t.inpRead()
+	t.cmdPrint(reply)
 	reply = reply.upper()
-	client.publish("elevator/commands", payload=reply, qos=2, retain=False)
-	if reply == "QUIT" or reply == "Q":
+	if reply == "EXIT" or reply == "X":
 		time.sleep(0.2)
 		client.loop_stop()
 		client.disconnect()
 		break
+	else:
+		client.publish("elevator/commands", payload=reply, qos=2, retain=False)
+
+
+t.Close()
 
 exit()

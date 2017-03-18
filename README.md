@@ -2,7 +2,7 @@
 This Python program, **`elevator.py`**, controls a model of an elevator with four floors using a Raspberry Pi.
 
 ## History
-I have been interested in the principals of controlling elevators for a long time, without studying the subject. A while ago I decided to just go forth and build me a model that I then could control with my Raspberry Pi. The initial result is here in this repository.
+I have been interested in the principals of controlling elevators for a long time, without studying the subject. A while ago I decided to just go forth and build me a model that I then could control with my Raspberry Pi. The result is here in this repository.
 
 At this moment (January 1, 2017) It is working reliably.
 
@@ -18,6 +18,11 @@ So I rebuilt that part to accept it's commands from a sequential file. I then ha
 
 And because I didn't want to have two terminal screens open, as a third part I created a script **`elev`** that starts the main engine in the background and then boots up the remote.
 
+Later I rebuild the code to make use of the MQTT message broker instead of a sequential file.
+
+Program messages were just printed to the terminal screen, causing the need for the elevator control program to be open during operation. I rebuild the code to spit out messages to another MQTT queue for the elevator_remote program to fetch is and display them on a curse windowed screen.
+
+
 ## Libraries
 The libraries used in this project are:
 * ADAFRUIT_MotorHAT, used for
@@ -28,8 +33,10 @@ The libraries used in this project are:
 	* the creation of a queue mechanism
 * atexit, used for
 	* registering a routine that is executed at program end
-* logging, used for
-	* giving messages thoughout the program
+* curses
+* os for interaction with the system
+* gawterm, using curses for
+	* creating a windowed screen to streamline output better
 * pigpio, used for
 	* controlling the input switches
 		* callback interrupt routines
